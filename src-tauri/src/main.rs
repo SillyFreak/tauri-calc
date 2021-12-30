@@ -4,6 +4,7 @@
 )]
 
 mod address;
+mod value;
 
 fn main() {
   tauri::Builder::default()
