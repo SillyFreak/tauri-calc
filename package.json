@@ -15,7 +15,7 @@
 		"@tauri-apps/api": "^1.0.0-beta.8"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "next",
+		"@sveltejs/adapter-static": "next",
 		"@sveltejs/kit": "next",
 		"@tauri-apps/cli": "^1.0.0-beta.10",
 		"@typescript-eslint/eslint-plugin": "^4.31.1",
