@@ -1,14 +1,21 @@
-use nom::{
-    bytes::complete::{tag, take_while_m_n},
-    combinator::map_res,
-    sequence::tuple,
-    IResult,
-};
+mod formula;
+mod identifier;
+mod number;
+mod range;
+mod string;
+
+use nom::branch::alt;
+use nom::combinator::map;
+use nom::IResult;
 
 use super::Value;
 
-pub fn parse(expr: &str) -> IResult<&str, Option<Value>> {
-    todo!();
+pub fn parse(input: &str) -> IResult<&str, Option<Value>> {
+    let formula = map(formula::parse_formula, |f| Some(Value::Formula(f)));
+    let number = map(number::parse_number, |n| Some(Value::Number(n)));
+    let string = map(string::parse_string, |s| Some(Value::String(s)));
+
+    alt((formula, number, string))(input)
 }
 
 #[cfg(test)]

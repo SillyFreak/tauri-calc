@@ -1,5 +1,10 @@
+mod error;
+
 use std::fmt;
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, ParseIntError};
+use std::str::FromStr;
+
+pub use error::{ColumnErrorKind, ParseColumnError};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RowAddress(NonZeroU32);
@@ -7,6 +12,15 @@ pub struct RowAddress(NonZeroU32);
 impl RowAddress {
     pub fn new(address: NonZeroU32) -> Self {
         Self(address)
+    }
+}
+
+impl FromStr for RowAddress {
+    type Err = ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let address: NonZeroU32 = s.parse()?;
+        Ok(Self::new(address))
     }
 }
 
@@ -37,6 +51,49 @@ pub struct ColAddress(NonZeroU32);
 impl ColAddress {
     pub fn new(address: NonZeroU32) -> Self {
         Self(address)
+    }
+}
+
+impl FromStr for ColAddress {
+    type Err = ParseColumnError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use ColumnErrorKind::*;
+
+        fn base26digit(ch: char) -> Result<u32, ParseColumnError> {
+            match ch.to_digit(36) {
+                Some(digit) if digit >= 10 => Ok(digit - 10),
+                _ => Err(ParseColumnError {
+                    kind: InvalidCharacter,
+                })?,
+            }
+        }
+
+        if s.is_empty() {
+            Err(ParseColumnError { kind: Empty })?;
+        }
+
+        let mut address: u32 = 0;
+
+        for ch in s.chars() {
+            let digit = base26digit(ch)?;
+
+            address = address
+                .checked_mul(26)
+                .ok_or(ParseColumnError { kind: Overflow })?;
+            address = address
+                .checked_add(digit)
+                .ok_or(ParseColumnError { kind: Overflow })?;
+        }
+
+        let address = NonZeroU32::new(address + 1).unwrap();
+        Ok(Self::new(address))
+    }
+}
+
+impl From<NonZeroU32> for ColAddress {
+    fn from(address: NonZeroU32) -> Self {
+        Self::new(address)
     }
 }
 
@@ -76,12 +133,6 @@ impl fmt::Display for ColAddress {
         }
 
         write!(f, "{}", str)
-    }
-}
-
-impl From<NonZeroU32> for ColAddress {
-    fn from(address: NonZeroU32) -> Self {
-        Self::new(address)
     }
 }
 
