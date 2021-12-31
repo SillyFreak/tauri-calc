@@ -1,10 +1,12 @@
 use std::fmt;
 
+/// An error while parsind a column address such as "C" or "AA".
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParseColumnError {
     pub(super) kind: ColumnErrorKind,
 }
 
+/// Error kind for column address parsing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ColumnErrorKind {

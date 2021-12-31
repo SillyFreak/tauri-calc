@@ -1,3 +1,6 @@
+//! Parsing of various kinds of numbers (bin, oct, hex, dec, decimal floating point numbers)
+//! into [`BigDecimal`].
+
 use bigdecimal::BigDecimal;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
@@ -24,10 +27,12 @@ where
 fn binary(input: &str) -> IResult<&str, BigDecimal> {
     let bin_digit1 = recognize(many1(one_of("01")));
 
+    // TODO sign
     number(preceded(alt((tag("0b"), tag("0b"))), bin_digit1))(input)
 }
 
 fn octal(input: &str) -> IResult<&str, BigDecimal> {
+    // TODO sign
     number(preceded(alt((tag("0o"), tag("0O"))), oct_digit1))(input)
 }
 
@@ -53,5 +58,6 @@ fn decimal(input: &str) -> IResult<&str, BigDecimal> {
 }
 
 fn hexadecimal(input: &str) -> IResult<&str, BigDecimal> {
+    // TODO sign
     number(preceded(alt((tag("0x"), tag("0X"))), hex_digit1))(input)
 }

@@ -1,3 +1,5 @@
+//! Parsers for different elements that can be put into a cell
+
 mod formula;
 mod identifier;
 mod number;
@@ -10,16 +12,18 @@ use nom::IResult;
 
 use crate::value::Value;
 
+/// parses a cell value that is entered plainly into a cell
 pub fn parse_value(input: &str) -> IResult<&str, Value> {
     let empty = map(eof, |_| Value::Empty);
     let number = map(number::parse_number, |n| Value::Number(n));
+    // TODO plain entered strings with quotes & escaping or verbatim?
     let string = map(string::parse_string, |s| Value::String(s));
 
     alt((empty, number, string))(input)
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     use crate::value::Value;

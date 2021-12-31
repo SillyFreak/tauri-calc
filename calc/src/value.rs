@@ -1,3 +1,7 @@
+//! Cell values are the result of evaluating what is put into a cell.
+//! For example, if `=1+1` is put into a cell, although that is a formula,
+//! the *value* of the cell would be two.
+
 mod formula;
 
 use std::fmt;
@@ -6,11 +10,16 @@ use bigdecimal::BigDecimal;
 
 pub use formula::Formula;
 
+/// The value of a cell
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
+    /// empty cells have this value
     Empty,
+    /// the value of the cell is a number
     Number(BigDecimal),
+    /// the value of the cell is a string
     String(String),
+    // TODO errors
 }
 
 impl fmt::Display for Value {
@@ -24,7 +33,7 @@ impl fmt::Display for Value {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     #[test]
