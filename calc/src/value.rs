@@ -1,6 +1,9 @@
+use bigdecimal::BigDecimal;
 use std::fmt;
 
 use crate::address::CellAddress;
+
+pub mod parser;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Formula {
@@ -17,8 +20,7 @@ impl fmt::Display for Formula {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
-    Integer(i64),
-    Decimal(f64),
+    Number(BigDecimal),
     String(String),
     Formula(Formula),
 }
@@ -26,8 +28,7 @@ pub enum Value {
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Integer(value) => write!(f, "{:?}", value),
-            Self::Decimal(value) => write!(f, "{:?}", value),
+            Self::Number(value) => write!(f, "{}", value),
             Self::String(value) => write!(f, "{:?}", value),
             Self::Formula(value) => write!(f, "={}", value),
         }
@@ -40,8 +41,7 @@ mod test {
 
     #[test]
     fn test_value() {
-        assert_eq!(format!("{}", Value::Integer(1)), "1");
-        assert_eq!(format!("{}", Value::Decimal(1.0)), "1.0");
+        assert_eq!(format!("{}", Value::Number("1".parse().unwrap())), "1");
         assert_eq!(format!("{}", Value::String("foo".to_string())), "\"foo\"");
         let cell_address = CellAddress::new(1.try_into().unwrap(), 1.try_into().unwrap());
         let formula = Value::Formula(Formula::Reference(cell_address));
