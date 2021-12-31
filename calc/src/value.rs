@@ -1,22 +1,10 @@
-use bigdecimal::BigDecimal;
-use std::fmt;
-
-use crate::address::CellAddress;
-
+pub mod formula;
 pub mod parser;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Formula {
-    Reference(CellAddress),
-}
+use std::fmt;
 
-impl fmt::Display for Formula {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::Reference(value) => write!(f, "{}", value),
-        }
-    }
-}
+use bigdecimal::BigDecimal;
+use formula::Formula;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
@@ -38,6 +26,8 @@ impl fmt::Display for Value {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    use crate::address::CellAddress;
 
     #[test]
     fn test_value() {
