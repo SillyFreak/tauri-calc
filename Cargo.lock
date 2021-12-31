@@ -255,9 +255,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "calc"
+version = "0.1.0"
+
+[[package]]
 name = "calc-app"
 version = "0.1.0"
 dependencies = [
+ "calc",
  "serde",
  "serde_json",
  "tauri",

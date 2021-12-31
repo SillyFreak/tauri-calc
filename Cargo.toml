@@ -1,5 +1,6 @@
 [workspace]
 
 members = [
+	"calc",
 	"calc-app/src-tauri",
 ]
