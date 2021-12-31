@@ -8,7 +8,7 @@ use nom::branch::alt;
 use nom::combinator::map;
 use nom::IResult;
 
-use super::Value;
+use crate::value::Value;
 
 pub fn parse(input: &str) -> IResult<&str, Option<Value>> {
     let formula = map(formula::parse_formula, |f| Some(Value::Formula(f)));

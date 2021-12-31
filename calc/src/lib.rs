@@ -1,4 +1,5 @@
 pub mod address;
+pub mod parser;
 pub mod value;
 
 #[cfg(test)]

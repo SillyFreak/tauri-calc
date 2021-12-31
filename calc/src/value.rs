@@ -1,10 +1,10 @@
-pub mod formula;
-pub mod parser;
+mod formula;
 
 use std::fmt;
 
 use bigdecimal::BigDecimal;
-use formula::Formula;
+
+pub use formula::Formula;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
