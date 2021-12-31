@@ -1,11 +1,11 @@
 [package]
-name = "app"
+name = "calc-app"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
 repository = ""
-default-run = "app"
+default-run = "calc-app"
 edition = "2021"
 build = "src/build.rs"
 
