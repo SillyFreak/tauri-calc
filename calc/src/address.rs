@@ -6,7 +6,7 @@ use std::fmt;
 use std::num::{NonZeroU32, ParseIntError};
 use std::str::FromStr;
 
-pub use error::{ColumnErrorKind, ParseColumnError};
+pub use error::ParseColumnError;
 
 /// A row address, which is a positive integer
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -62,19 +62,15 @@ impl FromStr for ColAddress {
     type Err = ParseColumnError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use ColumnErrorKind::*;
-
         fn base26digit(ch: char) -> Result<u32, ParseColumnError> {
             match ch.to_digit(36) {
                 Some(digit) if digit >= 10 => Ok(digit - 10),
-                _ => Err(ParseColumnError {
-                    kind: InvalidCharacter,
-                })?,
+                _ => Err(ParseColumnError::InvalidCharacter)?,
             }
         }
 
         if s.is_empty() {
-            Err(ParseColumnError { kind: Empty })?;
+            Err(ParseColumnError::Empty)?;
         }
 
         let mut address: u32 = 0;
@@ -84,10 +80,10 @@ impl FromStr for ColAddress {
 
             address = address
                 .checked_mul(26)
-                .ok_or(ParseColumnError { kind: Overflow })?;
+                .ok_or(ParseColumnError::Overflow)?;
             address = address
                 .checked_add(digit)
-                .ok_or(ParseColumnError { kind: Overflow })?;
+                .ok_or(ParseColumnError::Overflow)?;
         }
 
         let address = NonZeroU32::new(address + 1).unwrap();

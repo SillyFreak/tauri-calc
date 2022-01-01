@@ -1,30 +1,9 @@
-use std::fmt;
+use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FormulaError {
-    pub(super) kind: FormulaErrorKind,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// An error while parsind a column address such as "C" or "AA".
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum FormulaErrorKind {
-    InvalidFormula,
-}
-
-impl FormulaError {
-    pub fn kind(&self) -> &FormulaErrorKind {
-        &self.kind
-    }
-}
-
-impl fmt::Display for FormulaError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self.kind {
-                FormulaErrorKind::InvalidFormula => "cannot parse formula",
-            }
-        )
-    }
+pub enum FormulaError {
+    #[error("parsed string was not a valid formula")]
+    Invalid,
 }

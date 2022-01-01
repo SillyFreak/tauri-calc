@@ -14,7 +14,7 @@ use crate::value::Value;
 
 use self::expression::Expression;
 
-pub use error::{FormulaError, FormulaErrorKind};
+pub use error::FormulaError;
 
 pub trait Evaluate {
     fn evaluate(&self, context: &Sheet) -> Value;
@@ -30,13 +30,9 @@ impl FromStr for Formula {
     type Err = FormulaError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (rest, formula) = parse_cell(s).finish().map_err(|_| FormulaError {
-            kind: FormulaErrorKind::InvalidFormula,
-        })?;
+        let (rest, formula) = parse_cell(s).finish().map_err(|_| FormulaError::Invalid)?;
         if !rest.is_empty() {
-            Err(FormulaError {
-                kind: FormulaErrorKind::InvalidFormula,
-            })?;
+            Err(FormulaError::Invalid)?;
         }
 
         Ok(formula)
