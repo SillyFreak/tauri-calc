@@ -11,3 +11,11 @@ pub enum ParseColumnError {
     #[error("parsed string represents a too large address")]
     Overflow,
 }
+
+/// An error while parsind a column address such as "C" or "AA".
+#[derive(Error, Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum ParseCellError {
+    #[error("parsed string was not a valid cell address")]
+    Invalid,
+}

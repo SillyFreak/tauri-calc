@@ -59,11 +59,11 @@ mod tests {
     use crate::value::Value;
 
     fn set_and_get_cell<S: ToString>(input: S) -> Value {
-        let a1 = CellAddress::new("1".parse().unwrap(), "A".parse().unwrap());
-
         let mut sheet = Sheet::new();
-        sheet.set_cell(a1.clone(), input.to_string()).unwrap();
-        sheet.value(&a1).into()
+        sheet
+            .set_cell("A1".parse().unwrap(), input.to_string())
+            .unwrap();
+        sheet.value(&"A1".parse().unwrap()).into()
     }
 
     #[test]
@@ -98,32 +98,34 @@ mod tests {
 
     #[test]
     fn test_reference_formula() {
-        let a1 = CellAddress::new("1".parse().unwrap(), "A".parse().unwrap());
-        let a2 = CellAddress::new("2".parse().unwrap(), "A".parse().unwrap());
-
         let mut sheet = Sheet::new();
-        sheet.set_cell(a1, "1".to_string()).unwrap();
-        sheet.set_cell(a2.clone(), "=A1".to_string()).unwrap();
+        sheet
+            .set_cell("A1".parse().unwrap(), "1".to_string())
+            .unwrap();
+        sheet
+            .set_cell("A2".parse().unwrap(), "=A1".to_string())
+            .unwrap();
 
-        let value: Value = sheet.value(&a2).into();
+        let value: Value = sheet.value(&"A2".parse().unwrap()).into();
         assert_eq!(value, Value::Number(1.into()));
     }
 
     #[test]
     fn test_reference_formula_reevaluate() {
-        let a1 = CellAddress::new("1".parse().unwrap(), "A".parse().unwrap());
-        let a2 = CellAddress::new("2".parse().unwrap(), "A".parse().unwrap());
-
         let mut sheet = Sheet::new();
-        sheet.set_cell(a2.clone(), "=A1".to_string()).unwrap();
-        sheet.set_cell(a1, "1".to_string()).unwrap();
+        sheet
+            .set_cell("A2".parse().unwrap(), "=A1".to_string())
+            .unwrap();
+        sheet
+            .set_cell("A1".parse().unwrap(), "1".to_string())
+            .unwrap();
 
-        let value: Value = sheet.value(&a2).into();
+        let value: Value = sheet.value(&"A2".parse().unwrap()).into();
         assert_eq!(value, Value::Empty);
 
-        sheet.reevaluate(&a2);
+        sheet.reevaluate(&"A2".parse().unwrap());
 
-        let value: Value = sheet.value(&a2).into();
+        let value: Value = sheet.value(&"A2".parse().unwrap()).into();
         assert_eq!(value, Value::Number(1.into()));
     }
 }

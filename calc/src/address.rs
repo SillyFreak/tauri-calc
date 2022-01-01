@@ -2,11 +2,16 @@
 
 mod error;
 
+use nom::Finish;
 use std::fmt;
 use std::num::{NonZeroU32, ParseIntError};
 use std::str::FromStr;
 
 pub use error::ParseColumnError;
+
+use crate::parser::cell_address;
+
+use self::error::ParseCellError;
 
 /// A row address, which is a positive integer
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -144,6 +149,21 @@ pub struct CellAddress {
 impl CellAddress {
     pub fn new(row: RowAddress, col: ColAddress) -> Self {
         Self { row, col }
+    }
+}
+
+impl FromStr for CellAddress {
+    type Err = ParseCellError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (rest, address) = cell_address(s)
+            .finish()
+            .map_err(|_| ParseCellError::Invalid)?;
+        if !rest.is_empty() {
+            Err(ParseCellError::Invalid)?;
+        }
+
+        Ok(address)
     }
 }
 

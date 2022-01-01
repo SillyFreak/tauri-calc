@@ -13,6 +13,8 @@ use nom::IResult;
 use crate::formula::Formula;
 use crate::value::Value;
 
+pub use self::range::cell_address;
+
 pub fn parse_cell(input: &str) -> IResult<&str, Formula> {
     let formula = map(formula::parse_formula, |f| Formula::Formula(f));
     let value = map(parse_value, |v| Formula::Literal(v));

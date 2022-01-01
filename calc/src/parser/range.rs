@@ -11,7 +11,7 @@ pub fn parse_range(input: &str) -> IResult<&str, CellAddress> {
     cell_address(input)
 }
 
-fn cell_address(input: &str) -> IResult<&str, CellAddress> {
+pub fn cell_address(input: &str) -> IResult<&str, CellAddress> {
     map(tuple((col_address, row_address)), |(c, r)| {
         CellAddress::new(r, c)
     })(input)
