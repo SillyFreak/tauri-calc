@@ -10,7 +10,15 @@ use nom::branch::alt;
 use nom::combinator::{eof, map};
 use nom::IResult;
 
+use crate::formula::Formula;
 use crate::value::Value;
+
+pub fn parse_cell(input: &str) -> IResult<&str, Formula> {
+    let formula = map(formula::parse_formula, |f| Formula::Formula(f));
+    let value = map(parse_value, |v| Formula::Literal(v));
+
+    alt((formula, value))(input)
+}
 
 /// parses a cell value that is entered plainly into a cell
 pub fn parse_value(input: &str) -> IResult<&str, Value> {
