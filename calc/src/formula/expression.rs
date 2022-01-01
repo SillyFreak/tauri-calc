@@ -1,4 +1,6 @@
-use crate::{address::CellAddress, value::Value};
+use crate::address::CellAddress;
+use crate::sheet::Sheet;
+use crate::value::Value;
 
 use super::Evaluate;
 
@@ -9,10 +11,10 @@ pub enum Expression {
 }
 
 impl Evaluate for Expression {
-    fn evaluate(&self) -> Value {
+    fn evaluate(&self, context: &Sheet) -> Value {
         match self {
             Self::Literal(value) => value.clone(),
-            Self::Reference(_reference) => todo!(),
+            Self::Reference(address) => context.value(address).into(),
         }
     }
 }

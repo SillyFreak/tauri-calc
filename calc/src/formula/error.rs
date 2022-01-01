@@ -1,29 +1,29 @@
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CellInputError {
-    pub(super) kind: CellInputErrorKind,
+pub struct FormulaError {
+    pub(super) kind: FormulaErrorKind,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
-pub enum CellInputErrorKind {
+pub enum FormulaErrorKind {
     InvalidFormula,
 }
 
-impl CellInputError {
-    pub fn kind(&self) -> &CellInputErrorKind {
+impl FormulaError {
+    pub fn kind(&self) -> &FormulaErrorKind {
         &self.kind
     }
 }
 
-impl fmt::Display for CellInputError {
+impl fmt::Display for FormulaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}",
             match self.kind {
-                CellInputErrorKind::InvalidFormula => "cannot parse formula",
+                FormulaErrorKind::InvalidFormula => "cannot parse formula",
             }
         )
     }

@@ -24,6 +24,12 @@ impl Default for Value {
     }
 }
 
+impl From<Option<&Value>> for Value {
+    fn from(value: Option<&Value>) -> Self {
+        value.map_or(Value::Empty, Value::clone)
+    }
+}
+
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
