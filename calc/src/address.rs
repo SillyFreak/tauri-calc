@@ -9,7 +9,7 @@ use std::str::FromStr;
 pub use error::{ColumnErrorKind, ParseColumnError};
 
 /// A row address, which is a positive integer
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RowAddress(NonZeroU32);
 
 impl RowAddress {
@@ -49,7 +49,7 @@ impl fmt::Display for RowAddress {
 }
 
 /// A column address, which is an alphabetic base-26 number where "A" is 1, "Z" is 26, "AA" is 27, etc.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ColAddress(NonZeroU32);
 
 impl ColAddress {
@@ -143,7 +143,7 @@ impl fmt::Display for ColAddress {
 /// Address for a single cell, which consists of a row and column address.
 /// This is mainly used for identifying cells in internal use;
 /// most user-facing uses of cell addresses are actually single-cell ranges.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct CellAddress {
     row: RowAddress,
     col: ColAddress,
