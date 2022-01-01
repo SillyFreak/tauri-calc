@@ -76,14 +76,10 @@ impl FromStr for ColAddress {
         let mut address: u32 = 0;
 
         for ch in s.chars() {
-            let digit = base26digit(ch)?;
+            let d = base26digit(ch)?;
 
-            address = address
-                .checked_mul(26)
-                .ok_or(ParseColumnError::Overflow)?;
-            address = address
-                .checked_add(digit)
-                .ok_or(ParseColumnError::Overflow)?;
+            address = address.checked_mul(26).ok_or(ParseColumnError::Overflow)?;
+            address = address.checked_add(d).ok_or(ParseColumnError::Overflow)?;
         }
 
         let address = NonZeroU32::new(address + 1).unwrap();
