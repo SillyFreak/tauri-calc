@@ -63,13 +63,19 @@ impl Sheet {
         }
     }
 
-    pub fn set_function<S: ToString>(&mut self, name: S, function: Box<dyn Fn(&[Value]) -> Value>) {
-        self.functions.insert(name.to_string(), function);
+    pub fn set_function<S: ToString, F: 'static + Fn(&[Value]) -> Value>(
+        &mut self,
+        name: S,
+        function: F,
+    ) {
+        self.functions.insert(name.to_string(), Box::new(function));
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use bigdecimal::BigDecimal;
+
     use super::*;
 
     use crate::value::Value;
@@ -148,12 +154,10 @@ mod tests {
     #[test]
     fn test_function() {
         let mut sheet = Sheet::new();
-        sheet.set_function("fn", Box::new(|arguments| {
-            match arguments {
-                [arg] => arg.clone(),
-                _ => Value::Error(Error::Type),
-            }
-        }));
+        sheet.set_function("fn", |arguments| match arguments {
+            [arg] => arg.clone(),
+            _ => Value::Error(Error::Type),
+        });
 
         sheet
             .set_cell("A1".parse().unwrap(), "=fn(1)".to_string())
@@ -161,5 +165,36 @@ mod tests {
 
         let value: Value = sheet.value(&"A1".parse().unwrap()).into();
         assert_eq!(value, Value::Number(1.into()));
+    }
+
+    #[test]
+    fn test_sum_function() {
+        fn sum(arguments: &[Value]) -> Value {
+            fn sum(args: &[Value]) -> Result<BigDecimal, Error> {
+                let mut sum = 0.into();
+
+                for arg in args {
+                    let arg = arg.as_number()?;
+                    sum += arg;
+                }
+
+                Ok(sum)
+            }
+
+            match sum(arguments) {
+                Ok(value) => Value::Number(value),
+                Err(error) => Value::Error(error),
+            }
+        }
+
+        let mut sheet = Sheet::new();
+        sheet.set_function("sum", sum);
+
+        sheet
+            .set_cell("A1".parse().unwrap(), "=sum(1,2,3)".to_string())
+            .unwrap();
+
+        let value: Value = sheet.value(&"A1".parse().unwrap()).into();
+        assert_eq!(value, Value::Number(6.into()));
     }
 }
