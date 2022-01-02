@@ -15,7 +15,34 @@ pub enum Value {
     Number(BigDecimal),
     /// the value of the cell is a string
     String(String),
-    // TODO errors
+    /// any kind of error
+    Error(Error),
+}
+
+/// The value of a cell
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    /// a value could not be interpreted as a certain type as necessary
+    Type,
+}
+
+impl Value {
+    pub fn as_number(&self) -> Result<&BigDecimal, Error> {
+        match self {
+            Self::Number(value) => Ok(value),
+            Self::Error(error) => Err(*error),
+            _ => Err(Error::Type),
+        }
+    }
+
+    pub fn as_string(&self) -> Result<&str, Error> {
+        match self {
+            Self::String(value) => Ok(value),
+            Self::Error(error) => Err(*error),
+            _ => Err(Error::Type),
+        }
+    }
+
 }
 
 impl Default for Value {
@@ -36,6 +63,15 @@ impl fmt::Display for Value {
             Self::Empty => write!(f, ""),
             Self::Number(value) => write!(f, "{}", value),
             Self::String(value) => write!(f, "{:?}", value),
+            Self::Error(error) => write!(f, "{}", error),
+        }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Type => write!(f, "#TYPE"),
         }
     }
 }
