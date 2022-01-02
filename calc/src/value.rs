@@ -42,7 +42,6 @@ impl Value {
             _ => Err(Error::Type),
         }
     }
-
 }
 
 impl Default for Value {
