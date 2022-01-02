@@ -24,6 +24,8 @@ pub enum Value {
 pub enum Error {
     /// a value could not be interpreted as a certain type as necessary
     Type,
+    /// a nonexistent identifier was used
+    Undefined,
 }
 
 impl Value {
@@ -71,6 +73,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Type => write!(f, "#TYPE"),
+            Self::Undefined => write!(f, "#UNDEFINED"),
         }
     }
 }

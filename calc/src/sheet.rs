@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use crate::address::CellAddress;
 use crate::cell::Cell;
 use crate::formula::{Evaluate, FormulaError};
-use crate::value::Value;
+use crate::value::{Error, Value};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Default)]
 pub struct Sheet {
-    pub cells: HashMap<CellAddress, Cell>,
+    cells: HashMap<CellAddress, Cell>,
+    functions: HashMap<String, Box<dyn Fn(&[Value]) -> Value>>,
 }
 
 impl Sheet {
@@ -49,6 +50,21 @@ impl Sheet {
 
         let mut cell = self.cells.get_mut(address).expect("cell doesn't exist");
         cell.value = value;
+    }
+
+    pub fn function(&self, name: &str) -> Option<&dyn Fn(&[Value]) -> Value> {
+        self.functions.get(name).map(Box::as_ref)
+    }
+
+    pub fn call(&self, name: &str, arguments: &[Value]) -> Value {
+        match self.function(name) {
+            Some(function) => function(arguments),
+            None => return Value::Error(Error::Undefined),
+        }
+    }
+
+    pub fn set_function<S: ToString>(&mut self, name: S, function: Box<dyn Fn(&[Value]) -> Value>) {
+        self.functions.insert(name.to_string(), function);
     }
 }
 
@@ -97,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reference_formula() {
+    fn test_reference() {
         let mut sheet = Sheet::new();
         sheet
             .set_cell("A1".parse().unwrap(), "1".to_string())
@@ -111,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn test_reference_formula_reevaluate() {
+    fn test_reference_reevaluate() {
         let mut sheet = Sheet::new();
         sheet
             .set_cell("A2".parse().unwrap(), "=A1".to_string())
@@ -126,6 +142,24 @@ mod tests {
         sheet.reevaluate(&"A2".parse().unwrap());
 
         let value: Value = sheet.value(&"A2".parse().unwrap()).into();
+        assert_eq!(value, Value::Number(1.into()));
+    }
+
+    #[test]
+    fn test_function() {
+        let mut sheet = Sheet::new();
+        sheet.set_function("fn", Box::new(|arguments| {
+            match arguments {
+                [arg] => arg.clone(),
+                _ => Value::Error(Error::Type),
+            }
+        }));
+
+        sheet
+            .set_cell("A1".parse().unwrap(), "=fn(1)".to_string())
+            .unwrap();
+
+        let value: Value = sheet.value(&"A1".parse().unwrap()).into();
         assert_eq!(value, Value::Number(1.into()));
     }
 }
