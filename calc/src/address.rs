@@ -150,6 +150,14 @@ impl CellAddress {
     pub fn new(row: RowAddress, col: ColAddress) -> Self {
         Self { row, col }
     }
+
+    pub fn col(&self) -> ColAddress {
+        self.col
+    }
+
+    pub fn row(&self) -> RowAddress {
+        self.row
+    }
 }
 
 impl FromStr for CellAddress {

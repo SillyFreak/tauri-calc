@@ -8,6 +8,7 @@ pub mod expression;
 use nom::Finish;
 use std::str::FromStr;
 
+use crate::address::CellAddress;
 use crate::parser::parse_cell;
 use crate::sheet::Sheet;
 use crate::value::Value;
@@ -17,6 +18,8 @@ use self::expression::Expression;
 pub use error::FormulaError;
 
 pub trait Evaluate {
+    fn visit_dependecies<F: FnMut(CellAddress)>(&self, visitor: &mut F);
+
     fn evaluate(&self, context: &Sheet) -> Value;
 }
 
@@ -46,6 +49,13 @@ impl Default for Formula {
 }
 
 impl Evaluate for Formula {
+    fn visit_dependecies<F: FnMut(CellAddress)>(&self, visitor: &mut F) {
+        match self {
+            Self::Literal(_value) => {}
+            Self::Formula(expression) => expression.visit_dependecies(visitor),
+        }
+    }
+
     fn evaluate(&self, context: &Sheet) -> Value {
         match self {
             Self::Literal(value) => value.clone(),

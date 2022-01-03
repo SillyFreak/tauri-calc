@@ -1,13 +1,45 @@
+use std::cmp;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
+
+use petgraph::graphmap::DiGraphMap;
 
 use crate::address::CellAddress;
 use crate::cell::Cell;
 use crate::formula::{Evaluate, FormulaError};
 use crate::value::{Error, Value};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+struct CellAddressOrd(CellAddress);
+
+impl From<CellAddress> for CellAddressOrd {
+    fn from(address: CellAddress) -> Self {
+        Self(address)
+    }
+}
+
+impl cmp::PartialOrd for CellAddressOrd {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        let col = self.0.col().partial_cmp(&other.0.col())?;
+        let row = self.0.row().partial_cmp(&other.0.row())?;
+        Some(col.then(row))
+    }
+}
+
+impl cmp::Ord for CellAddressOrd {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        let col = self.0.col().cmp(&other.0.col());
+        let row = self.0.row().cmp(&other.0.row());
+        col.then(row)
+    }
+}
+
 #[derive(Default)]
 pub struct Sheet {
     cells: HashMap<CellAddress, Cell>,
+    /// An edge from a to b means that cell b depends on a, or that data flows from a to b.
+    /// E.g. if A2 contains `=A1`, there will be an edge from A1 to A2.
+    dependents: DiGraphMap<CellAddressOrd, ()>,
     functions: HashMap<String, Box<dyn Fn(&[Value]) -> Value>>,
 }
 
@@ -32,10 +64,26 @@ impl Sheet {
         let formula = input.parse()?;
         let value = self.evaluate(&formula);
 
-        let mut cell = self.cells.entry(address).or_default();
+        let cell = self.cells.entry(address);
+
+        // remove old dependencies of this cell's formula
+        if let Entry::Occupied(cell) = &cell {
+            cell.get().formula.visit_dependecies(&mut |dependency| {
+                self.dependents
+                    .remove_edge(dependency.into(), address.into());
+            });
+        }
+
+        let mut cell = cell.or_default();
         cell.input = input;
         cell.formula = formula;
         cell.value = value;
+
+        // add new dependencies of this cell's formula
+        cell.formula.visit_dependecies(&mut |dependency| {
+            self.dependents
+                .add_edge(dependency.into(), address.into(), ());
+        });
 
         Ok(())
     }

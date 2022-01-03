@@ -15,6 +15,18 @@ pub enum Expression {
 }
 
 impl Evaluate for Expression {
+    fn visit_dependecies<F: FnMut(CellAddress)>(&self, visitor: &mut F) {
+        match self {
+            Self::Literal(_value) => {}
+            Self::Reference(address) => visitor(*address),
+            Self::Call { arguments, .. } => {
+                for arg in arguments {
+                    arg.visit_dependecies(visitor);
+                }
+            }
+        }
+    }
+
     fn evaluate(&self, context: &Sheet) -> Value {
         match self {
             Self::Literal(value) => value.clone(),
