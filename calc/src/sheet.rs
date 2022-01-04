@@ -1,6 +1,6 @@
 use std::cmp;
 use std::collections::hash_map::Entry;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use petgraph::algo::toposort;
 use petgraph::graphmap::DiGraphMap;
@@ -62,7 +62,7 @@ impl Sheet {
         expression.evaluate(self)
     }
 
-    pub fn set_cell(&mut self, address: CellAddress, input: String) -> Result<(), FormulaError> {
+    pub fn set_cell(&mut self, address: CellAddress, input: String) -> Result<HashSet<CellAddress>, FormulaError> {
         let formula: Formula = input.parse()?;
 
         let mut cell = self.cells.entry(address);
@@ -107,12 +107,12 @@ impl Sheet {
 
         // - make a subgraph only containing those
         let dependent_cells = dfs.discovered;
-        let dependent_cells = NodeFiltered::from_fn(&self.dependents, |address| {
+        let filtered_cells = NodeFiltered::from_fn(&self.dependents, |address| {
             dependent_cells.is_visited(&address)
         });
 
         // - topologically walk this graph
-        match toposort(&dependent_cells, None) {
+        match toposort(&filtered_cells, None) {
             Ok(cells) => {
                 for CellAddressOrd(cell) in &cells {
                     self.reevaluate(cell);
@@ -123,7 +123,9 @@ impl Sheet {
             }
         }
 
-        Ok(())
+        let dependent_cells = dependent_cells.into_iter().map(|CellAddressOrd(ord)| ord).collect();
+
+        Ok(dependent_cells)
     }
 
     fn reevaluate(&mut self, address: &CellAddress) {
