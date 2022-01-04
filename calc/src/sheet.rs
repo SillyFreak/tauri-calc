@@ -2,11 +2,13 @@ use std::cmp;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use petgraph::algo::toposort;
 use petgraph::graphmap::DiGraphMap;
+use petgraph::visit::{Dfs, NodeFiltered, VisitMap};
 
 use crate::address::CellAddress;
 use crate::cell::Cell;
-use crate::formula::{Evaluate, FormulaError};
+use crate::formula::{Evaluate, Formula, FormulaError};
 use crate::value::{Error, Value};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -61,34 +63,70 @@ impl Sheet {
     }
 
     pub fn set_cell(&mut self, address: CellAddress, input: String) -> Result<(), FormulaError> {
-        let formula = input.parse()?;
-        let value = self.evaluate(&formula);
+        let formula: Formula = input.parse()?;
 
-        let cell = self.cells.entry(address);
+        let mut cell = self.cells.entry(address);
 
         // remove old dependencies of this cell's formula
-        if let Entry::Occupied(cell) = &cell {
-            cell.get().formula.visit_dependecies(&mut |dependency| {
+        if let Entry::Occupied(cell) = &mut cell {
+            let cell = cell.get_mut();
+            cell.formula.visit_dependecies(&mut |dependency| {
                 self.dependents
                     .remove_edge(dependency.into(), address.into());
             });
         }
 
-        let mut cell = cell.or_default();
-        cell.input = input;
-        cell.formula = formula;
-        cell.value = value;
-
         // add new dependencies of this cell's formula
-        cell.formula.visit_dependecies(&mut |dependency| {
+        formula.visit_dependecies(&mut |dependency| {
             self.dependents
                 .add_edge(dependency.into(), address.into(), ());
         });
 
+        // update the cell's input and formula.
+        if let ("", Formula::Literal(Value::Empty)) = (input.as_ref(), &formula) {
+            // the cell is now empty; remove it if it exists. Save the previous value
+            if let Entry::Occupied(cell) = cell {
+                cell.remove();
+            }
+        } else {
+            // the cell is (at least now) not empty; fill it
+            let mut cell = cell.or_default();
+            cell.input = input;
+            cell.formula = formula;
+
+            // also make sure it exists in the dependency graph
+            self.dependents.add_node(address.into());
+        };
+
+        // evaluate this and dependent cells
+        // TODO ignore cells that have not actually changed
+
+        // - determine all dependent cells
+        let mut dfs = Dfs::new(&self.dependents, address.into());
+        while let Some(_) = dfs.next(&self.dependents) {}
+
+        // - make a subgraph only containing those
+        let dependent_cells = dfs.discovered;
+        let dependent_cells = NodeFiltered::from_fn(&self.dependents, |address| {
+            dependent_cells.is_visited(&address)
+        });
+
+        // - topologically walk this graph
+        match toposort(&dependent_cells, None) {
+            Ok(cells) => {
+                for CellAddressOrd(cell) in &cells {
+                    self.reevaluate(cell);
+                }
+            }
+            Err(_cycle) => {
+                todo!();
+            }
+        }
+
         Ok(())
     }
 
-    pub fn reevaluate(&mut self, address: &CellAddress) {
+    fn reevaluate(&mut self, address: &CellAddress) {
         let cell = match self.cell(address) {
             Some(cell) => cell,
             None => return,
@@ -189,11 +227,6 @@ mod tests {
         sheet
             .set_cell("A1".parse().unwrap(), "1".to_string())
             .unwrap();
-
-        let value: Value = sheet.value(&"A2".parse().unwrap()).into();
-        assert_eq!(value, Value::Empty);
-
-        sheet.reevaluate(&"A2".parse().unwrap());
 
         let value: Value = sheet.value(&"A2".parse().unwrap()).into();
         assert_eq!(value, Value::Number(1.into()));
