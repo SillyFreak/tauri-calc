@@ -16,20 +16,20 @@ use crate::value::Value;
 pub use self::range::cell_address;
 
 pub fn parse_cell(input: &str) -> IResult<&str, Formula> {
-    let formula = map(formula::parse_formula, |f| Formula::Formula(f));
-    let value = map(parse_value, |v| Formula::Literal(v));
-
-    alt((formula, value))(input)
+    alt((
+        map(formula::parse_formula, Formula::Formula),
+        map(parse_value, Formula::Literal),
+    ))(input)
 }
 
 /// parses a cell value that is entered plainly into a cell
 pub fn parse_value(input: &str) -> IResult<&str, Value> {
-    let empty = map(eof, |_| Value::Empty);
-    let number = map(number::parse_number, |n| Value::Number(n));
-    // TODO plain entered strings with quotes & escaping or verbatim?
-    let string = map(string::parse_string, |s| Value::String(s));
-
-    alt((empty, number, string))(input)
+    alt((
+        map(eof, |_| Value::Empty),
+        map(number::parse_number, Value::Number),
+        // TODO plain entered strings with quotes & escaping or verbatim?
+        map(string::parse_string, Value::String),
+    ))(input)
 }
 
 #[cfg(test)]

@@ -70,12 +70,12 @@ impl FromStr for ColAddress {
         fn base26digit(ch: char) -> Result<u32, ParseColumnError> {
             match ch.to_digit(36) {
                 Some(digit) if digit >= 10 => Ok(digit - 10),
-                _ => Err(ParseColumnError::InvalidCharacter)?,
+                _ => Err(ParseColumnError::InvalidCharacter),
             }
         }
 
         if s.is_empty() {
-            Err(ParseColumnError::Empty)?;
+            return Err(ParseColumnError::Empty);
         }
 
         let mut address: u32 = 0;
@@ -164,14 +164,16 @@ impl FromStr for CellAddress {
     type Err = ParseCellError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (rest, address) = cell_address(s)
+        cell_address(s)
             .finish()
-            .map_err(|_| ParseCellError::Invalid)?;
-        if !rest.is_empty() {
-            Err(ParseCellError::Invalid)?;
-        }
-
-        Ok(address)
+            .map_err(|_| ParseCellError::Invalid)
+            .and_then(|(rest, address)| {
+                if rest.is_empty() {
+                    Ok(address)
+                } else {
+                    Err(ParseCellError::Invalid)
+                }
+            })
     }
 }
 

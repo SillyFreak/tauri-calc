@@ -20,29 +20,33 @@ pub fn parse_formula(input: &str) -> IResult<&str, Expression> {
 
 pub fn parse_expression(input: &str) -> IResult<&str, Expression> {
     alt((
-        map(parse_range, |address| Expression::Reference(address)),
-        map(parse_number, |number| {
-            Expression::Literal(Value::Number(number))
-        }),
-        map(parse_string, |string| {
-            Expression::Literal(Value::String(string))
-        }),
+        map(parse_range, Expression::Reference),
+        map(parse_literal, Expression::Literal),
         parse_call,
     ))(input)
 }
 
+pub fn parse_literal(input: &str) -> IResult<&str, Value> {
+    alt((
+        map(parse_number, Value::Number),
+        map(parse_string, Value::String),
+    ))(input)
+}
+
 pub fn parse_call(input: &str) -> IResult<&str, Expression> {
-    let args = tuple((
-        many0(terminated(parse_expression, char(','))),
-        opt(parse_expression),
-    ));
+    let args = map(
+        // (arg ,)* arg?
+        tuple((
+            many0(terminated(parse_expression, char(','))),
+            opt(parse_expression),
+        )),
+        // combine the repeated args with the optional trailing arg
+        |(mut args, trailing_arg)| {
+            args.extend(trailing_arg);
+            args
+        },
+    );
     let args = delimited(char('('), args, char(')'));
-    let args = map(args, |(mut args, extra_arg)| {
-        if let Some(arg) = extra_arg {
-            args.push(arg);
-        }
-        args
-    });
 
     map(tuple((parse_identifier, args)), |(name, arguments)| {
         let name = name.to_string();

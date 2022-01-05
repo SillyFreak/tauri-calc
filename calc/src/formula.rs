@@ -35,7 +35,7 @@ impl FromStr for Formula {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (rest, formula) = parse_cell(s).finish().map_err(|_| FormulaError::Invalid)?;
         if !rest.is_empty() {
-            Err(FormulaError::Invalid)?;
+            return Err(FormulaError::Invalid);
         }
 
         Ok(formula)

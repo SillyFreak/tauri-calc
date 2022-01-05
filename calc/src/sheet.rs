@@ -36,13 +36,15 @@ impl cmp::Ord for CellAddressOrd {
     }
 }
 
+type Function = dyn Fn(&[Value]) -> Value;
+
 #[derive(Default)]
 pub struct Sheet {
     cells: HashMap<CellAddress, Cell>,
     /// An edge from a to b means that cell b depends on a, or that data flows from a to b.
     /// E.g. if A2 contains `=A1`, there will be an edge from A1 to A2.
     dependents: DiGraphMap<CellAddressOrd, ()>,
-    functions: HashMap<String, Box<dyn Fn(&[Value]) -> Value>>,
+    functions: HashMap<String, Box<Function>>,
 }
 
 impl Sheet {
@@ -62,7 +64,11 @@ impl Sheet {
         expression.evaluate(self)
     }
 
-    pub fn set_cell(&mut self, address: CellAddress, input: String) -> Result<HashSet<CellAddress>, FormulaError> {
+    pub fn set_cell(
+        &mut self,
+        address: CellAddress,
+        input: String,
+    ) -> Result<HashSet<CellAddress>, FormulaError> {
         let formula: Formula = input.parse()?;
 
         let mut cell = self.cells.entry(address);
@@ -103,7 +109,7 @@ impl Sheet {
 
         // - determine all dependent cells
         let mut dfs = Dfs::new(&self.dependents, address.into());
-        while let Some(_) = dfs.next(&self.dependents) {}
+        while dfs.next(&self.dependents).is_some() {}
 
         // - make a subgraph only containing those
         let dependent_cells = dfs.discovered;
@@ -123,7 +129,10 @@ impl Sheet {
             }
         }
 
-        let dependent_cells = dependent_cells.into_iter().map(|CellAddressOrd(ord)| ord).collect();
+        let dependent_cells = dependent_cells
+            .into_iter()
+            .map(|CellAddressOrd(ord)| ord)
+            .collect();
 
         Ok(dependent_cells)
     }
@@ -140,14 +149,14 @@ impl Sheet {
         cell.value = value;
     }
 
-    pub fn function(&self, name: &str) -> Option<&dyn Fn(&[Value]) -> Value> {
+    pub fn function(&self, name: &str) -> Option<&Function> {
         self.functions.get(name).map(Box::as_ref)
     }
 
     pub fn call(&self, name: &str, arguments: &[Value]) -> Value {
         match self.function(name) {
             Some(function) => function(arguments),
-            None => return Value::Error(Error::Undefined),
+            None => Value::Error(Error::Undefined),
         }
     }
 
