@@ -2,20 +2,16 @@
 //! For example, if `=1` is put into a cell, the formula consists of a (very simple) mathematical expression.
 //! If `1` is put into a cell, the "formula" is a literal value
 
-mod error;
 pub mod expression;
 
-use nom::Finish;
 use std::str::FromStr;
 
 use crate::address::CellAddress;
-use crate::parser::parse_cell;
+use crate::parser::{parse_cell_complete, ParseFormulaError};
 use crate::sheet::Sheet;
 use crate::value::Value;
 
 use self::expression::Expression;
-
-pub use error::FormulaError;
 
 pub trait Evaluate {
     fn visit_dependecies<F: FnMut(CellAddress)>(&self, visitor: &mut F);
@@ -30,15 +26,10 @@ pub enum Formula {
 }
 
 impl FromStr for Formula {
-    type Err = FormulaError;
+    type Err = ParseFormulaError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (rest, formula) = parse_cell(s).finish().map_err(|_| FormulaError::Invalid)?;
-        if !rest.is_empty() {
-            return Err(FormulaError::Invalid);
-        }
-
-        Ok(formula)
+        parse_cell_complete(s)
     }
 }
 

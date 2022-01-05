@@ -1,19 +1,35 @@
 //! Parsers for different elements that can be put into a cell
 
+mod error;
 mod formula;
 mod identifier;
 mod number;
-mod range;
+pub mod range;
 mod string;
 
 use nom::branch::alt;
-use nom::combinator::{eof, map};
-use nom::IResult;
+use nom::combinator::{all_consuming, eof, map};
+use nom::error::ParseError;
+use nom::Err;
+use nom::{IResult, InputLength, Parser};
 
 use crate::formula::Formula;
 use crate::value::Value;
 
-pub use self::range::cell_address;
+pub use self::error::*;
+
+fn parse_complete<I, O, E: ParseError<I>, F>(f: F, input: I) -> Result<O, Err<E>>
+where
+    I: InputLength,
+    F: Parser<I, O, E>,
+{
+    let (_, res) = all_consuming(f)(input)?;
+    Ok(res)
+}
+
+pub fn parse_cell_complete(input: &str) -> Result<Formula, ParseFormulaError> {
+    parse_complete(parse_cell, input).map_err(|_| ParseFormulaError::Invalid)
+}
 
 pub fn parse_cell(input: &str) -> IResult<&str, Formula> {
     alt((

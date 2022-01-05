@@ -8,7 +8,8 @@ use petgraph::visit::{Dfs, NodeFiltered, VisitMap};
 
 use crate::address::CellAddress;
 use crate::cell::Cell;
-use crate::formula::{Evaluate, Formula, FormulaError};
+use crate::formula::{Evaluate, Formula};
+use crate::parser::ParseFormulaError;
 use crate::value::{Error, Value};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -68,7 +69,7 @@ impl Sheet {
         &mut self,
         address: CellAddress,
         input: String,
-    ) -> Result<HashSet<CellAddress>, FormulaError> {
+    ) -> Result<HashSet<CellAddress>, ParseFormulaError> {
         let formula: Formula = input.parse()?;
 
         let mut cell = self.cells.entry(address);

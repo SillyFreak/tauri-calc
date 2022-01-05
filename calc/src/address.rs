@@ -1,17 +1,13 @@
 //! Types for row, column and cell addresses.
 
-mod error;
-
-use nom::Finish;
 use std::fmt;
-use std::num::{NonZeroU32, ParseIntError};
+use std::num::NonZeroU32;
 use std::str::FromStr;
 
-pub use error::ParseColumnError;
-
-use crate::parser::cell_address;
-
-use self::error::ParseCellError;
+use crate::parser::range::{
+    parse_cell_address_complete, parse_col_address_complete, parse_row_address_complete,
+};
+use crate::parser::{ParseCellAddressError, ParseColumnAddressError, ParseRowAddressError};
 
 /// A row address, which is a positive integer
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -24,11 +20,10 @@ impl RowAddress {
 }
 
 impl FromStr for RowAddress {
-    type Err = ParseIntError;
+    type Err = ParseRowAddressError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let address: NonZeroU32 = s.parse()?;
-        Ok(Self::new(address))
+        parse_row_address_complete(s)
     }
 }
 
@@ -64,31 +59,10 @@ impl ColAddress {
 }
 
 impl FromStr for ColAddress {
-    type Err = ParseColumnError;
+    type Err = ParseColumnAddressError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        fn base26digit(ch: char) -> Result<u32, ParseColumnError> {
-            match ch.to_digit(36) {
-                Some(digit) if digit >= 10 => Ok(digit - 10),
-                _ => Err(ParseColumnError::InvalidCharacter),
-            }
-        }
-
-        if s.is_empty() {
-            return Err(ParseColumnError::Empty);
-        }
-
-        let mut address: u32 = 0;
-
-        for ch in s.chars() {
-            let d = base26digit(ch)?;
-
-            address = address.checked_mul(26).ok_or(ParseColumnError::Overflow)?;
-            address = address.checked_add(d).ok_or(ParseColumnError::Overflow)?;
-        }
-
-        let address = NonZeroU32::new(address + 1).unwrap();
-        Ok(Self::new(address))
+        parse_col_address_complete(s)
     }
 }
 
@@ -161,19 +135,10 @@ impl CellAddress {
 }
 
 impl FromStr for CellAddress {
-    type Err = ParseCellError;
+    type Err = ParseCellAddressError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        cell_address(s)
-            .finish()
-            .map_err(|_| ParseCellError::Invalid)
-            .and_then(|(rest, address)| {
-                if rest.is_empty() {
-                    Ok(address)
-                } else {
-                    Err(ParseCellError::Invalid)
-                }
-            })
+        parse_cell_address_complete(s)
     }
 }
 
