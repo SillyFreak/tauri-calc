@@ -65,6 +65,7 @@ pub fn parse_call(input: &str) -> IResult<&str, Expression> {
 mod tests {
     use super::*;
 
+    use crate::address::CellAddress;
     use crate::parser::parse_complete;
     use crate::value::Value;
 
@@ -113,5 +114,33 @@ mod tests {
         assert!(parse_call("foo(").is_err());
         assert!(parse_call("foo(1").is_err());
         assert!(parse_call("foo(,1)").is_err());
+    }
+
+    #[test]
+    fn test_parse_formula() {
+        fn cell_address(row: u32, col: u32) -> CellAddress {
+            CellAddress::new(row.try_into().unwrap(), col.try_into().unwrap())
+        }
+
+        let parse_formula = |s| parse_complete(parse_formula, s);
+
+        assert!(matches!(
+            parse_formula(" = 1 ").unwrap(),
+            Expression::Literal(Value::Number(number)) if number == 1.into(),
+        ));
+        assert!(matches!(
+            parse_formula(" = \"foo\" ").unwrap(),
+            Expression::Literal(Value::String(string)) if string == "foo",
+        ));
+        assert!(matches!(
+            parse_formula(" = A1 ").unwrap(),
+            Expression::Reference(address) if address == cell_address(1, 1),
+        ));
+        assert!(matches!(
+            parse_formula(" = foo ( ) ").unwrap(),
+            Expression::Call { name, arguments } if name == "foo" && arguments.len() == 0,
+        ));
+
+        assert!(parse_literal(" = foo ").is_err());
     }
 }
