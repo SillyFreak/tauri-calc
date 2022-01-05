@@ -1,9 +1,10 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
+use nom::character::complete::space0;
 use nom::character::streaming::char;
 use nom::combinator::{map, opt};
 use nom::multi::many0;
-use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
 use nom::IResult;
 
 use crate::formula::expression::Expression;
@@ -15,7 +16,7 @@ use super::range::parse_range;
 use super::string::parse_string;
 
 pub fn parse_formula(input: &str) -> IResult<&str, Expression> {
-    preceded(tag("="), parse_expression)(input)
+    preceded(tuple((tag("="), space0)), parse_expression)(input)
 }
 
 pub fn parse_expression(input: &str) -> IResult<&str, Expression> {
@@ -37,7 +38,10 @@ pub fn parse_call(input: &str) -> IResult<&str, Expression> {
     let args = map(
         // (arg ,)* arg?
         tuple((
-            many0(terminated(parse_expression, char(','))),
+            many0(terminated(
+                parse_expression,
+                delimited(space0, char(','), space0),
+            )),
             opt(parse_expression),
         )),
         // combine the repeated args with the optional trailing arg
@@ -46,12 +50,15 @@ pub fn parse_call(input: &str) -> IResult<&str, Expression> {
             args
         },
     );
-    let args = delimited(char('('), args, char(')'));
+    let args = delimited(tuple((char('('), space0)), args, tuple((space0, char(')'))));
 
-    map(tuple((parse_identifier, args)), |(name, arguments)| {
-        let name = name.to_string();
-        Expression::Call { name, arguments }
-    })(input)
+    map(
+        separated_pair(parse_identifier, space0, args),
+        |(name, arguments)| {
+            let name = name.to_string();
+            Expression::Call { name, arguments }
+        },
+    )(input)
 }
 
 #[cfg(test)]
@@ -66,11 +73,11 @@ mod tests {
         let parse_literal = |s| parse_complete(parse_literal, s);
 
         assert_eq!(
-            parse_literal("1").unwrap(),
+            parse_literal(" 1 ").unwrap(),
             Value::Number("1".parse().unwrap())
         );
         assert_eq!(
-            parse_literal("\"foo\"").unwrap(),
+            parse_literal(" \"foo\" ").unwrap(),
             Value::String("foo".to_string())
         );
 
@@ -82,23 +89,23 @@ mod tests {
         let parse_call = |s| parse_complete(parse_call, s);
 
         assert!(matches!(
-            parse_call("foo()").unwrap(),
+            parse_call(" foo ( ) ").unwrap(),
             Expression::Call { name, arguments } if name == "foo" && arguments.len() == 0,
         ));
         assert!(matches!(
-            parse_call("foo(1)").unwrap(),
+            parse_call(" foo ( 1 ) ").unwrap(),
             Expression::Call { name, arguments } if name == "foo" && arguments.len() == 1,
         ));
         assert!(matches!(
-            parse_call("foo(1,)").unwrap(),
+            parse_call(" foo ( 1 , ) ").unwrap(),
             Expression::Call { name, arguments } if name == "foo" && arguments.len() == 1,
         ));
         assert!(matches!(
-            parse_call("foo(1,1)").unwrap(),
+            parse_call(" foo ( 1 , 1 ) ").unwrap(),
             Expression::Call { name, arguments } if name == "foo" && arguments.len() == 2,
         ));
         assert!(matches!(
-            parse_call("foo(1,1,)").unwrap(),
+            parse_call(" foo ( 1 , 1 , ) ").unwrap(),
             Expression::Call { name, arguments } if name == "foo" && arguments.len() == 2,
         ));
 
