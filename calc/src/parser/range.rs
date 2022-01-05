@@ -43,14 +43,10 @@ fn col_address(input: &str) -> IResult<&str, ColAddress> {
     map_res(
         alpha1,
         |s: &str| -> Result<ColAddress, ParseColumnAddressError> {
-            if s.is_empty() {
-                return Err(ParseColumnAddressError::Empty);
-            }
-
             let mut address: u32 = 0;
 
             for ch in s.chars() {
-                let d = base26digit(ch)?;
+                let d = base26digit(ch)? + 1;
 
                 address = address
                     .checked_mul(26)
@@ -59,7 +55,7 @@ fn col_address(input: &str) -> IResult<&str, ColAddress> {
                     .ok_or(ParseColumnAddressError::Overflow)?;
             }
 
-            let address = NonZeroU32::new(address + 1).unwrap();
+            let address = NonZeroU32::new(address).unwrap();
             Ok(ColAddress::new(address))
         },
     )(input)
@@ -75,4 +71,63 @@ fn row_address(input: &str) -> IResult<&str, RowAddress> {
             Ok(RowAddress::new(address))
         },
     )(input)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_cell_address() {
+        fn cell_address(row: u32, col: u32) -> CellAddress {
+            CellAddress::new(row.try_into().unwrap(), col.try_into().unwrap())
+        }
+
+        assert_eq!(
+            parse_cell_address_complete("A1").unwrap(),
+            cell_address(1, 1)
+        );
+        assert_eq!(
+            parse_cell_address_complete("aa23").unwrap(),
+            cell_address(23, 27)
+        );
+        assert!(parse_cell_address_complete("0").is_err());
+        assert!(parse_cell_address_complete("a").is_err());
+    }
+
+    #[test]
+    fn test_parse_col_address() {
+        fn col_address(col: u32) -> ColAddress {
+            ColAddress::new(col.try_into().unwrap())
+        }
+
+        assert_eq!(parse_col_address_complete("A").unwrap(), col_address(1));
+        assert_eq!(parse_col_address_complete("Z").unwrap(), col_address(26));
+        assert_eq!(
+            parse_col_address_complete("aa").unwrap(),
+            col_address(1 * 26 + 1)
+        );
+        assert_eq!(
+            parse_col_address_complete("zz").unwrap(),
+            col_address(26 * 26 + 26)
+        );
+        assert_eq!(
+            parse_col_address_complete("aaa").unwrap(),
+            col_address(1 * 26 * 26 + 1 * 26 + 1)
+        );
+        assert!(parse_col_address_complete("0").is_err());
+        assert!(parse_col_address_complete("a1").is_err());
+    }
+
+    #[test]
+    fn test_parse_row_address() {
+        fn row_address(row: u32) -> RowAddress {
+            RowAddress::new(row.try_into().unwrap())
+        }
+
+        assert_eq!(parse_row_address_complete("1").unwrap(), row_address(1));
+        assert_eq!(parse_row_address_complete("11").unwrap(), row_address(11));
+        assert!(parse_row_address_complete("a").is_err());
+        assert!(parse_row_address_complete("a1").is_err());
+    }
 }

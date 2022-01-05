@@ -56,16 +56,55 @@ pub fn parse_call(input: &str) -> IResult<&str, Expression> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::formula::parse_formula;
+    use super::*;
+
+    use crate::parser::parse_complete;
+    use crate::value::Value;
+
+    #[test]
+    fn test_parse_literal() {
+        let parse_literal = |s| parse_complete(parse_literal, s);
+
+        assert_eq!(
+            parse_literal("1").unwrap(),
+            Value::Number("1".parse().unwrap())
+        );
+        assert_eq!(
+            parse_literal("\"foo\"").unwrap(),
+            Value::String("foo".to_string())
+        );
+
+        assert!(parse_literal("foo").is_err());
+    }
 
     #[test]
     fn test_parse_call() {
-        println!("{:?}", parse_formula("=foo()"));
-        println!("{:?}", parse_formula("=foo(1)"));
-        println!("{:?}", parse_formula("=foo(1,)"));
-        println!("{:?}", parse_formula("=foo(1,1)"));
-        println!("{:?}", parse_formula("=foo(1,1,)"));
-        println!("{:?}", parse_formula("=foo(1,1,1)"));
-        // panic!();
+        let parse_call = |s| parse_complete(parse_call, s);
+
+        assert!(matches!(
+            parse_call("foo()").unwrap(),
+            Expression::Call { name, arguments } if name == "foo" && arguments.len() == 0,
+        ));
+        assert!(matches!(
+            parse_call("foo(1)").unwrap(),
+            Expression::Call { name, arguments } if name == "foo" && arguments.len() == 1,
+        ));
+        assert!(matches!(
+            parse_call("foo(1,)").unwrap(),
+            Expression::Call { name, arguments } if name == "foo" && arguments.len() == 1,
+        ));
+        assert!(matches!(
+            parse_call("foo(1,1)").unwrap(),
+            Expression::Call { name, arguments } if name == "foo" && arguments.len() == 2,
+        ));
+        assert!(matches!(
+            parse_call("foo(1,1,)").unwrap(),
+            Expression::Call { name, arguments } if name == "foo" && arguments.len() == 2,
+        ));
+
+        assert!(parse_call("foo").is_err());
+        assert!(parse_call("foo(").is_err());
+        assert!(parse_call("foo(1").is_err());
+        assert!(parse_call("foo(,1)").is_err());
     }
 }

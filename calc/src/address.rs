@@ -83,8 +83,7 @@ impl TryFrom<u32> for ColAddress {
 
 impl fmt::Display for ColAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // convert the address into a 0-based number so that we can treat 'A' as the digit 0
-        let mut num = u32::from(self.0) - 1;
+        let mut num = u32::from(self.0);
         // we need at least one byte, so allocate up front
         // more than four (always ASCII) characters are only needed for outlandish numbers of columns
         let mut str = String::with_capacity(4);
@@ -96,15 +95,20 @@ impl fmt::Display for ColAddress {
             Some(digit)
         }
 
-        if num == 0 {
-            let digit = base26digit(0).unwrap();
-            str.push(digit);
-        } else {
-            while num > 0 {
-                let digit = base26digit(num % 26).unwrap();
-                str.insert(0, digit);
-                num /= 26;
-            }
+        // the number is always > 0 in the beginning, so we're never returning an empty string
+        while num > 0 {
+            // we need to subtract 1 basically to account for the fact that none of the letters stands for zero
+            // e.g. for 27:
+            // - decrement to 26
+            // - 26 % 26 results in A for the least significant digit
+            // - 26 / 26 results in 1 for the next iteration
+            // - decrement to 0
+            // - 0 % 26 results in A for the second digit
+            // this off-by-one error basically accumulates because of the 1-based nature of base26 numerals
+            num -= 1;
+            let digit = base26digit(num % 26).unwrap();
+            str.insert(0, digit);
+            num /= 26;
         }
 
         write!(f, "{}", str)
@@ -153,8 +157,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_display() {
-        let cell_address = CellAddress::new(1.try_into().unwrap(), 1.try_into().unwrap());
-        assert_eq!(format!("{}", cell_address), "A1");
+    fn test_display_col() {
+        fn col_address(col: u32) -> ColAddress {
+            ColAddress::new(col.try_into().unwrap())
+        }
+
+        assert_eq!(format!("{}", col_address(1)), "A");
+        assert_eq!(format!("{}", col_address(26)), "Z");
+        assert_eq!(format!("{}", col_address(1 * 26 + 1)), "AA");
+        assert_eq!(format!("{}", col_address(1 * 26 + 26)), "AZ");
+        assert_eq!(format!("{}", col_address(26 * 26 + 26)), "ZZ");
+        assert_eq!(format!("{}", col_address(1 * 26 * 26 + 1 * 26 + 1)), "AAA");
     }
 }

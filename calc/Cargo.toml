@@ -8,5 +8,6 @@ edition = "2021"
 [dependencies]
 bigdecimal = "0.3.0"
 nom = "7.1.0"
+num-bigint = "0.4.3"
 petgraph = "0.6.0"
 thiserror = "1.0.30"
