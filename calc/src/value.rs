@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn test_value() {
         assert_eq!(format!("{}", Value::Empty), "");
-        assert_eq!(format!("{}", Value::Number("1".parse().unwrap())), "1");
-        assert_eq!(format!("{}", Value::String("foo".to_string())), "\"foo\"");
+        assert_eq!(format!("{}", Value::Number(1.into())), "1");
+        assert_eq!(format!("{}", Value::String("foo".into())), "\"foo\"");
     }
 }

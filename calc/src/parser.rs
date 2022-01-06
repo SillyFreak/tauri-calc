@@ -62,13 +62,10 @@ mod tests {
         let parse_value = |s| parse_complete(parse_value, s);
 
         assert_eq!(parse_value("  ").unwrap(), Value::Empty);
-        assert_eq!(
-            parse_value(" 1 ").unwrap(),
-            Value::Number("1".parse().unwrap())
-        );
+        assert_eq!(parse_value(" 1 ").unwrap(), Value::Number(1.into()));
         assert_eq!(
             parse_value(" \"foo\" ").unwrap(),
-            Value::String("foo".to_string())
+            Value::String("foo".into())
         );
         assert!(matches!(parse_value("x"), Err(_)));
     }

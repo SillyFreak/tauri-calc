@@ -79,7 +79,7 @@ mod tests {
         );
         assert_eq!(
             parse_literal(" \"foo\" ").unwrap(),
-            Value::String("foo".to_string())
+            Value::String("foo".into())
         );
 
         assert!(parse_literal("foo").is_err());
