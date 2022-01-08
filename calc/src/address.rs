@@ -4,6 +4,10 @@ use std::fmt;
 use std::num::NonZeroU32;
 use std::str::FromStr;
 
+use serde::de::Error;
+use serde::de::Visitor;
+use serde::{Deserialize, Serialize, Serializer};
+
 use crate::parser::range::{
     parse_cell_address_complete, parse_col_address_complete, parse_row_address_complete,
 };
@@ -45,6 +49,41 @@ impl TryFrom<u32> for RowAddress {
 impl fmt::Display for RowAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl Serialize for RowAddress {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_newtype_struct("$tauri_calc::row_address", &self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for RowAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct RowAddressVisitor;
+
+        impl<'de> Visitor<'de> for RowAddressVisitor {
+            type Value = RowAddress;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a numerical row address as a string is expected")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                v.parse().map_err(Error::custom)
+            }
+        }
+
+        deserializer.deserialize_str(RowAddressVisitor)
     }
 }
 
@@ -115,6 +154,41 @@ impl fmt::Display for ColAddress {
     }
 }
 
+impl Serialize for ColAddress {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_newtype_struct("$tauri_calc::col_address", &self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for ColAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct ColAddressVisitor;
+
+        impl<'de> Visitor<'de> for ColAddressVisitor {
+            type Value = ColAddress;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("an alphabetic column address as a string is expected")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                v.parse().map_err(Error::custom)
+            }
+        }
+
+        deserializer.deserialize_str(ColAddressVisitor)
+    }
+}
+
 /// Address for a single cell, which consists of a row and column address.
 /// This is mainly used for identifying cells in internal use;
 /// most user-facing uses of cell addresses are actually single-cell ranges.
@@ -149,6 +223,41 @@ impl FromStr for CellAddress {
 impl fmt::Display for CellAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}{}", self.col, self.row)
+    }
+}
+
+impl Serialize for CellAddress {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_newtype_struct("$tauri_calc::cell_address", &self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for CellAddress {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct CellAddressVisitor;
+
+        impl<'de> Visitor<'de> for CellAddressVisitor {
+            type Value = CellAddress;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("an alphabetic column address as a string is expected")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                v.parse().map_err(Error::custom)
+            }
+        }
+
+        deserializer.deserialize_str(CellAddressVisitor)
     }
 }
 
