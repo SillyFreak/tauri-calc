@@ -21,17 +21,5 @@
 </script>
 
 <div class="w-full h-full flex flex-col">
-	<div class="flex-none flex flex-row">
-		<input
-			type="text"
-			class="flex-none w-24"
-			readonly
-			placeholder="Address"
-			value={currentCell?.address}
-		/>
-		<input type="text" class="flex-1" placeholder="Formula/Value" value={currentCell?.formula} />
-	</div>
-	<div class="flex-1">
-		<Spreadsheet />
-	</div>
+	<Spreadsheet />
 </div>

@@ -1,6 +1,6 @@
 use std::cmp;
 use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use petgraph::algo::toposort;
 use petgraph::graphmap::DiGraphMap;
@@ -37,7 +37,7 @@ impl cmp::Ord for CellAddressOrd {
     }
 }
 
-type Function = dyn Fn(&[Value]) -> Value;
+type Function = dyn Send + Sync + Fn(&[Value]) -> Value;
 
 #[derive(Default)]
 pub struct Sheet {
@@ -69,7 +69,7 @@ impl Sheet {
         &mut self,
         address: CellAddress,
         input: String,
-    ) -> Result<HashSet<CellAddress>, ParseFormulaError> {
+    ) -> Result<HashMap<CellAddress, Value>, ParseFormulaError> {
         let formula: Formula = input.parse()?;
 
         let mut cell = self.cells.entry(address);
@@ -132,7 +132,7 @@ impl Sheet {
 
         let dependent_cells = dependent_cells
             .into_iter()
-            .map(|CellAddressOrd(ord)| ord)
+            .map(|CellAddressOrd(ord)| (ord, self.value(&ord).into()))
             .collect();
 
         Ok(dependent_cells)
@@ -161,7 +161,7 @@ impl Sheet {
         }
     }
 
-    pub fn set_function<S: ToString, F: 'static + Fn(&[Value]) -> Value>(
+    pub fn set_function<S: ToString, F: 'static + Send + Sync + Fn(&[Value]) -> Value>(
         &mut self,
         name: S,
         function: F,

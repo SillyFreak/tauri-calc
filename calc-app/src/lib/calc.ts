@@ -11,8 +11,8 @@ export async function getColAddress(colIndex: number): Promise<string> {
 	return invoke('get_col_address', { colIndex });
 }
 
-export async function getCellAddress(rowIndex: number, colIndex: number): Promise<string> {
-	return invoke('get_cell_address', { rowIndex, colIndex });
+export async function getCell(rowIndex: number, colIndex: number): Promise<[string, string]> {
+	return invoke('get_cell', { rowIndex, colIndex });
 }
 
 export async function setCell(
