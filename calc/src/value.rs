@@ -5,13 +5,16 @@
 use std::fmt;
 
 use bigdecimal::BigDecimal;
+use serde::{Serialize, Serializer};
 
 /// The value of a cell
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(tag = "type", content = "value")]
 pub enum Value {
     /// empty cells have this value
     Empty,
     /// the value of the cell is a number
+    #[serde(serialize_with = "serialize_bigdecimal")]
     Number(BigDecimal),
     /// the value of the cell is a string
     String(String),
@@ -19,8 +22,15 @@ pub enum Value {
     Error(Error),
 }
 
+fn serialize_bigdecimal<S>(number: &BigDecimal, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_newtype_struct("$tauri_calc::bigdecimal", &number.to_string())
+}
+
 /// The value of a cell
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum Error {
     /// a value could not be interpreted as a certain type as necessary
     Type,
@@ -87,5 +97,26 @@ mod tests {
         assert_eq!(format!("{}", Value::Empty), "");
         assert_eq!(format!("{}", Value::Number(1.into())), "1");
         assert_eq!(format!("{}", Value::String("foo".into())), "\"foo\"");
+        assert_eq!(format!("{}", Value::Error(Error::Type)), "#TYPE");
+    }
+
+    #[test]
+    fn test_serialize() {
+        assert_eq!(
+            serde_json::to_string(&Value::Empty).unwrap(),
+            r#"{"type":"Empty"}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Value::Number(1.into())).unwrap(),
+            r#"{"type":"Number","value":"1"}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Value::String("foo".into())).unwrap(),
+            r#"{"type":"String","value":"foo"}"#
+        );
+        assert_eq!(
+            serde_json::to_string(&Value::Error(Error::Type)).unwrap(),
+            r#"{"type":"Error","value":"Type"}"#
+        );
     }
 }
