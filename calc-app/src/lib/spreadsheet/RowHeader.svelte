@@ -1,13 +1,7 @@
 <script lang="ts">
-	import * as calc from '$lib/calc';
-
-	export let rowIndex = undefined;
+	export let address: string;
 </script>
 
 <th class="border border-gray-300">
-	{#await calc.getRowAddress(rowIndex)}
-		...
-	{:then value}
-		{value}
-	{/await}
+	{address}
 </th>

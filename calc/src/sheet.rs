@@ -126,7 +126,7 @@ impl Sheet {
                 }
             }
             Err(_cycle) => {
-                todo!();
+                todo!("cycle");
             }
         }
 

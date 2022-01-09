@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as calc from '$lib/calc';
 
-	import Cell from './Cell.svelte';
+	import Cell, { FocusCellEvent } from './Cell.svelte';
 	import ColHeader from './ColHeader.svelte';
 	import RowHeader from './RowHeader.svelte';
 
@@ -11,6 +11,7 @@
 	let formulaInput: HTMLInputElement;
 
 	let currentCell = undefined;
+	let cellValues: { [address: calc.Address]: calc.Value } = {};
 
 	function* range(start, end, step = 1) {
 		for (let i = start; i < end; i += step) {
@@ -18,13 +19,10 @@
 		}
 	}
 
-	async function setCurrentCell({
-		detail: { rowIndex, colIndex },
-	}: CustomEvent<{ rowIndex: number; colIndex: number }>) {
-		const [address, formula] = await calc.getCell(rowIndex, colIndex);
+	async function setCurrentCell(event: FocusCellEvent) {
+		const { address } = event.detail;
+		const formula = await calc.getFormula(address);
 		currentCell = {
-			rowIndex,
-			colIndex,
 			address,
 			formula,
 		};
@@ -34,9 +32,15 @@
 		currentCell.formula = formulaInput.value;
 
 		const { address, formula } = currentCell;
-		console.log(address, formula);
-		const cells = await calc.setCell(address, formula);
-		console.log(cells);
+		const cells = await calc.setFormula(address, formula);
+
+		for (const [address, value] of Object.entries(cells)) {
+			if (value.type === 'Empty') {
+				delete cellValues[address];
+			} else {
+				cellValues[address] = value;
+			}
+		}
 	}
 </script>
 
@@ -63,16 +67,20 @@
 			<tr>
 				<th class="w-8 border border-gray-300" />
 				{#each [...range(1, COLS + 1)] as colIndex}
-					<ColHeader {colIndex} />
+					<ColHeader address={calc.getColAddress(colIndex)} />
 				{/each}
 			</tr>
 		</thead>
 		<tbody>
 			{#each [...range(1, ROWS + 1)] as rowIndex}
-				<tr>
-					<RowHeader {rowIndex} />
+				<tr class="h-4">
+					<RowHeader address={calc.getRowAddress(rowIndex)} />
 					{#each [...range(1, COLS + 1)] as colIndex}
-						<Cell {rowIndex} {colIndex} on:focusCell={setCurrentCell} />
+						<Cell
+							address={calc.getCellAddress(rowIndex, colIndex)}
+							value={cellValues[calc.getCellAddress(rowIndex, colIndex)]}
+							on:focusCell={setCurrentCell}
+						/>
 					{/each}
 				</tr>
 			{/each}

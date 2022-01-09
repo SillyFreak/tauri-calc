@@ -1,23 +1,48 @@
 import { invoke } from '@tauri-apps/api/tauri';
 
 export type Address = string;
-export type Value = any;
+export type Value =
+	| { type: 'Number'; value: string }
+	| { type: 'String'; value: string }
+	| { type: 'Error'; value: string };
 
-export async function getRowAddress(rowIndex: number): Promise<string> {
-	return invoke('get_row_address', { rowIndex });
+export type AnyValue = Value | { type: 'Empty' };
+
+export function getRowAddress(rowIndex: number): string {
+	if (rowIndex < 1) throw new Error('rowIndex must be positive');
+
+	return `${rowIndex}`;
 }
 
-export async function getColAddress(colIndex: number): Promise<string> {
-	return invoke('get_col_address', { colIndex });
+export function getColAddress(colIndex: number): string {
+	if (colIndex < 1) throw new Error('colIndex must be positive');
+
+	function base26digit(num: number) {
+		return String.fromCharCode('A'.charCodeAt(0) + num);
+	}
+
+	let address = '';
+
+	while (colIndex > 0) {
+		colIndex -= 1;
+		address = base26digit(colIndex % 26) + address;
+		colIndex = Math.floor(colIndex / 26);
+	}
+
+	return address;
 }
 
-export async function getCell(rowIndex: number, colIndex: number): Promise<[string, string]> {
-	return invoke('get_cell', { rowIndex, colIndex });
+export function getCellAddress(rowIndex: number, colIndex: number): string {
+	return `${getColAddress(colIndex)}${getRowAddress(rowIndex)}`;
 }
 
-export async function setCell(
+export async function getFormula(address: string): Promise<string> {
+	return invoke('get_formula', { address });
+}
+
+export async function setFormula(
 	address: string,
-	input: string,
-): Promise<{ [address: Address]: Value }> {
-	return invoke('set_cell', { address, input });
+	formula: string,
+): Promise<{ [address: Address]: AnyValue }> {
+	return invoke('set_formula', { address, formula });
 }
