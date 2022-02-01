@@ -21,10 +21,12 @@
 	}
 </script>
 
-<td class="h-inherit border border-gray-300" on:focusin={focusCell}>
-	<div tabindex="0" class="m-0.5 h-full">
+<td class="border border-gray-300" on:focusin={focusCell}>
+	<div tabindex="0" class="m-0.5">
 		{#if value !== undefined}
 			{value.value}
+		{:else}
+			&nbsp;
 		{/if}
 	</div>
 </td>
