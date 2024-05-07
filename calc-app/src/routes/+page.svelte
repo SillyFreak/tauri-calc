@@ -20,6 +20,6 @@
 	}
 </script>
 
-<div class="w-full h-full flex flex-col">
+<div class="flex h-full w-full flex-col">
 	<Spreadsheet />
 </div>

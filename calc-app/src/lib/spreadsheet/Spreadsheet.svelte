@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as calc from '$lib/calc';
 
-	import Cell, { FocusCellEvent } from './Cell.svelte';
+	import Cell, { type FocusCellEvent } from './Cell.svelte';
 	import ColHeader from './ColHeader.svelte';
 	import RowHeader from './RowHeader.svelte';
 
@@ -44,10 +44,10 @@
 	}
 </script>
 
-<div class="flex-none flex flex-row">
+<div class="flex flex-none flex-row">
 	<input
 		type="text"
-		class="flex-none w-24"
+		class="w-24 flex-none"
 		readonly
 		placeholder="Address"
 		value={currentCell?.address}
