@@ -97,7 +97,7 @@ impl Sheet {
             }
         } else {
             // the cell is (at least now) not empty; fill it
-            let mut cell = cell.or_default();
+            let cell = cell.or_default();
             cell.input = input;
             cell.formula = formula;
 
@@ -146,7 +146,7 @@ impl Sheet {
 
         let value = self.evaluate(&cell.formula);
 
-        let mut cell = self.cells.get_mut(address).expect("cell doesn't exist");
+        let cell = self.cells.get_mut(address).expect("cell doesn't exist");
         cell.value = value;
     }
 
