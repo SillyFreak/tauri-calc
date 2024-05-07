@@ -234,6 +234,7 @@ dependencies = [
 name = "calc-app"
 version = "0.0.0"
 dependencies = [
+ "bigdecimal",
  "calc",
  "serde",
  "serde_json",

@@ -32,9 +32,28 @@ fn set_formula(
 }
 
 fn main() {
+    fn sum(values: &[Value]) -> Value {
+        use bigdecimal::BigDecimal;
+        use calc::value::Error;
+
+        fn inner(values: &[Value]) -> Result<Value, Error> {
+            let mut sum = BigDecimal::default();
+            for value in values {
+                sum += value.as_number()?;
+            }
+
+            Ok(Value::Number(sum))
+        }
+
+        inner(values).unwrap_or_else(Value::Error)
+    }
+
+    let mut sheet = Sheet::new();
+    sheet.set_function("sum", sum);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .manage(Mutex::new(Sheet::new()))
+        .manage(Mutex::new(sheet))
         .invoke_handler(tauri::generate_handler![get_formula, set_formula])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
